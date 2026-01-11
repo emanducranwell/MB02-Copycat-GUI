@@ -23,6 +23,9 @@ let mergeThreshold = 0.95;
 
 let logEveryNFrames = 1;
 
+let hasSerialData = false;
+
+
 
 
 function preload() {
@@ -34,11 +37,20 @@ function preload() {
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   noStroke();
-  bridge = new SerialBridge();
   bridge.onData("arduino_1", (data) => {
-    let values = data.split(",");
-    sensor1Value = parseInt(values[0]);
-    sensor2Value = parseInt(values[1]);
+    if (!data) return;
+  
+    const parts = data.trim().split(",");
+    if (parts.length < 2) return;
+  
+    const a = parseInt(parts[0], 10);
+    const b = parseInt(parts[1], 10);
+  
+    if (Number.isNaN(a) || Number.isNaN(b)) return;
+  
+    sensor1Value = a;
+    sensor2Value = b;
+    hasSerialData = true; // 👈 THIS IS KEY
   });
 
   blob1.pos = createVector(random(width), random(height));
@@ -100,27 +112,21 @@ function draw() {
   let r2 = blob2.size * 0.5;
   let isMerged = d < (r1 + r2) * mergeThreshold;
 
-  if (frameCount % logEveryNFrames === 0) {
+  if (hasSerialData && frameCount % logEveryNFrames === 0) {
     totalSamples++;
     if (isMerged) mergedSamples++;
-
+  
     dataLog.push({
-        t_ms: millis(),
-        frame: frameCount,
-
-        sensor1_raw: sensor1Value,
-        sensor2_raw: sensor2Value,
-        sensor1_avg: p1Val,
-        sensor2_avg: p2Val,
-        p1Norm,
-        p2Norm,
-        blob1: { x: blob1.pos.x, y: blob1.pos.y, size: blob1.size },
-        blob2: { x: blob2.pos.x, y: blob2.pos.y, size: blob2.size },
-
-        distance: d,
-      
-        merged: isMerged
-  });
+      sensor1_raw: sensor1Value,
+      sensor2_raw: sensor2Value,
+      sensor1_avg: p1Val,
+      sensor2_avg: p2Val,
+      p1Norm,
+      p2Norm,
+      merged: isMerged
+    });
+  
+  
   
 
   metaballShader.setUniform("u_ball1", [blob1.pos.x, blob1.pos.y, blob1.size]);

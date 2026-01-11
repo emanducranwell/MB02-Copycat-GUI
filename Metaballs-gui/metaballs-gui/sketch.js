@@ -37,6 +37,7 @@ function preload() {
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   noStroke();
+  bridge = new SerialBridge();
   bridge.onData("arduino_1", (data) => {
     if (!data) return;
   
@@ -50,8 +51,9 @@ function setup() {
   
     sensor1Value = a;
     sensor2Value = b;
-    hasSerialData = true; // 👈 THIS IS KEY
+    hasSerialData = true;
   });
+
 
   blob1.pos = createVector(random(width), random(height));
   blob2.pos = createVector(random(width), random(height));
@@ -65,7 +67,6 @@ function setup() {
   saveButton.style("border", "none"); 
   saveButton.mousePressed(saveDataAsJSON);
 }
-
 
 
 function windowResized() {
@@ -115,7 +116,7 @@ function draw() {
   if (hasSerialData && frameCount % logEveryNFrames === 0) {
     totalSamples++;
     if (isMerged) mergedSamples++;
-  
+
     dataLog.push({
       sensor1_raw: sensor1Value,
       sensor2_raw: sensor2Value,
@@ -125,10 +126,9 @@ function draw() {
       p2Norm,
       merged: isMerged
     });
-  
-  
-  
+  } // ✅ CLOSE IF HERE
 
+  // ✅ ALWAYS draw, every frame
   metaballShader.setUniform("u_ball1", [blob1.pos.x, blob1.pos.y, blob1.size]);
   metaballShader.setUniform("u_ball2", [blob2.pos.x, blob2.pos.y, blob2.size]);
 
@@ -139,9 +139,8 @@ function draw() {
   vertex(1, 1, 0, 1, 1);
   vertex(-1, 1, 0, 0, 1);
   endShape();
+}
 
-}
-}
 
 function average(arr) {
   return arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -176,4 +175,7 @@ function saveDataAsJSON() {
     };
   
     saveJSON(exportObj, "metaballs_chameleon_data.json");
+
   }
+
+

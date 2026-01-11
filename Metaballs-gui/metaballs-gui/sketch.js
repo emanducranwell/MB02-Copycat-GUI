@@ -19,7 +19,7 @@ let dataLog = [];
 let totalSamples = 0;
 let mergedSamples = 0;
 
-let mergeThreshold = 0.95;
+let mergeThreshold = 0.99;
 
 let logEveryNFrames = 1;
 
@@ -66,6 +66,68 @@ function setup() {
   saveButton.style("border-radius", "999px"); 
   saveButton.style("border", "none"); 
   saveButton.mousePressed(saveDataAsJSON);
+
+  experimentStartMs = millis();
+
+// --- MODAL OVERLAY ---
+modal = createDiv();
+modal.hide();
+
+modal.style("position", "fixed");
+modal.style("left", "0");
+modal.style("top", "0");
+modal.style("width", "100vw");
+modal.style("height", "100vh");
+modal.style("display", "flex");
+modal.style("align-items", "center");
+modal.style("justify-content", "center");
+modal.style("background", "rgba(0,0,0,0.65)");
+modal.style("z-index", "9999");
+
+// --- MODAL CARD ---
+modalCard = createDiv();
+modalCard.parent(modal);
+modalCard.style("background", "rgba(20,20,20,0.95)");
+modalCard.style("padding", "22px 24px");
+modalCard.style("border-radius", "16px");
+modalCard.style("min-width", "280px");
+modalCard.style("max-width", "vw");
+modalCard.style("color", "white");
+modalCard.style("font-family", "sans-serif");
+modalCard.style("text-align", "center");
+
+// Score line
+modalText = createP("");
+modalText.parent(modalCard);
+modalText.style("margin", "0 0 16px 0");
+modalText.style("font-size", "18px");
+
+// Buttons row
+let btnRow = createDiv();
+btnRow.parent(modalCard);
+btnRow.style("display", "flex");
+btnRow.style("gap", "10px");
+btnRow.style("justify-content", "center");
+
+// Restart
+restartButton = createButton("Restart experiment");
+restartButton.parent(btnRow);
+restartButton.style("padding", "10px 14px");
+restartButton.style("border-radius", "999px");
+restartButton.style("border", "none");
+restartButton.style("cursor", "pointer");
+restartButton.mousePressed(restartExperiment);
+
+// Close (optional)
+closeButton = createButton("Close");
+closeButton.parent(btnRow);
+closeButton.style("padding", "10px 14px");
+closeButton.style("border-radius", "999px");
+closeButton.style("background", "transparent");
+closeButton.style("color", "white");
+closeButton.style("border", "1px solid rgba(255,255,255,0.35)");
+closeButton.style("cursor", "pointer");
+closeButton.mousePressed(() => modal.hide());
 }
 
 
@@ -90,7 +152,8 @@ function draw() {
 
 
   let diff = abs(p1Norm - p2Norm);
-  let desiredDist = lerp(60, 400, diff * distanceScale * 0.1);
+  let t = constrain(diff * distanceScale, 0, 1);   // <-- no *0.1
+  let desiredDist = lerp(60, 600, t);  
   let dir = p5.Vector.sub(blob2.pos, blob1.pos);
   let currentDist = dir.mag();
   let force = (currentDist - desiredDist) * 0.008;
@@ -175,7 +238,35 @@ function saveDataAsJSON() {
     };
   
     saveJSON(exportObj, "metaballs_chameleon_data.json");
+    let percent = (chameleonIndex * 100).toFixed(1);
+    modalText.html(`Chameleon index = <b>${percent}%</b>`);
+    modal.show();
 
+  }
+
+  function restartExperiment() {
+    // Reset counters + data
+    dataLog = [];
+    totalSamples = 0;
+    mergedSamples = 0;
+  
+    // Reset smoothing buffers (so you don't carry old readings)
+    buffer1 = [];
+    buffer2 = [];
+  
+    // Reset time baseline
+    experimentStartMs = millis();
+  
+    // Optional: reset blob positions/velocities for a fresh run
+    blob1.pos = createVector(random(width), random(height));
+    blob2.pos = createVector(random(width), random(height));
+    blob1.vel = p5.Vector.random2D().mult(2);
+    blob2.vel = p5.Vector.random2D().mult(2);
+  
+    // Optional: also reset hasSerialData if you want “wait for first valid packet” again
+    // hasSerialData = false;
+  
+    modal.hide();
   }
 
 

@@ -69,7 +69,7 @@ function setup() {
 
   experimentStartMs = millis();
 
-// --- MODAL OVERLAY ---
+
 modal = createDiv();
 modal.hide();
 
@@ -82,7 +82,7 @@ modal.style("display", "flex");
 modal.style("align-items", "center");
 modal.style("justify-content", "center");
 modal.style("background", "rgba(0,0,0,0.65)");
-modal.style("z-index", "9999");
+modal.style("z-index", "999");
 
 // --- MODAL CARD ---
 modalCard = createDiv();
@@ -118,7 +118,7 @@ restartButton.style("border", "none");
 restartButton.style("cursor", "pointer");
 restartButton.mousePressed(restartExperiment);
 
-// Close (optional)
+// Close button
 closeButton = createButton("Close");
 closeButton.parent(btnRow);
 closeButton.style("padding", "10px 14px");
